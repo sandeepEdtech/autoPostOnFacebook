@@ -23,6 +23,6 @@ export const env = {
    // ✅ FACEBOOK (NEW — THIS FIXES YOUR ERROR)
    FB_PAGE_ID: process.env.FB_PAGE_ID || "",
    FB_PAGE_TOKEN: process.env.FB_PAGE_TOKEN || "",
-   BASE_URL:process.env.BASE_URL || ""
-
+   BASE_URL:process.env.BASE_URL || "",
+   IG_BUSINESS_ID:process.env.IG_BUSINESS_ID || ""
 }
