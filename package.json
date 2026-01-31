@@ -1,0 +1,30 @@
+{
+  "name": "ai-social-poster",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.13.4",
+    "canvas": "^3.2.1",
+    "cloudinary": "^2.9.0",
+    "dotenv": "^17.2.3",
+    "express": "^4.22.1",
+    "mongoose": "^9.1.5",
+    "node-cron": "^4.2.1",
+    "openai": "^6.17.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.25",
+    "@types/node": "^25.1.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3"
+  }
+}
