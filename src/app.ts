@@ -131,32 +131,45 @@ async function postToInstagramAutomatically() {
   }
 }
 
-function createEngagingCaption(quote: string): string {
-  const greetings = ["🌟", "🚀", "💫", "🔥", "✨"];
+export function createEngagingCaption(quote: string): string {
+  // 1. Viral Greetings / Scroll Stoppers
+  const greetings = ["🚀", "🌟", "💫", "🔥", "✨", "💎", "👑", "⚡"];
   const greeting = greetings[Math.floor(Math.random() * greetings.length)];
   
-  const hashtags = [
-    "#Motivation", "#Inspiration", "#DailyQuote", "#Success",
-    "#Mindset", "#Positivity", "#Growth", "#Goals",
-    "#Entrepreneur", "#LifeLessons", "#Wisdom", "#MotivationalQuotes",
-    "#PositiveVibes", "#SelfImprovement", "#DreamBig", "#Achieve"
-  ];
-  
-  // Randomly select 5-8 hashtags
-  const selectedHashtags = hashtags
-    .sort(() => 0.5 - Math.random())
-    .slice(0, Math.floor(Math.random() * 4) + 5);
-  
+  // 2. High-Engagement CTAs (Meaningful Interactions)
   const callToActions = [
     "What's your take on this? 👇",
     "Tag someone who needs to see this!",
     "Drop a 💯 if this resonates with you!",
     "Share your thoughts in the comments!",
     "Save this for your daily dose of motivation!",
+    "Double-tap if you agree! ❤️",
+    "Comment YES if you needed this today!",
+    "Share to your story if this helped! 📲",
+    "What's your biggest takeaway from this?"
   ];
-  
   const cta = callToActions[Math.floor(Math.random() * callToActions.length)];
   
+  // 3. Trending 2026 Hashtag Cloud
+  const hashtags = [
+    "#MotivationMonday", "#TuesdayThoughts", "#WisdomWednesday", 
+    "#ThursdayMotivation", "#FridayFeeling", "#WeekendVibes",
+    "#EntrepreneurLife", "#Startup", "#BusinessTips", 
+    "#SuccessMindset", "#Hustle", "#Grind",
+    "#SelfImprovement", "#PersonalDevelopment", "#Mindset", 
+    "#GrowthHacking", "#Productivity", "#Focus",
+    "#DigitalMarketing", "#SocialMediaTips", "#ContentCreation",
+    "#AI", "#Tech", "#Innovation",
+    "#Viral", "#Trending", "#Inspiration", 
+    "#QuoteOfTheDay", "#DailyMotivation", "#LifeLessons"
+  ];
+  
+  // 4. Randomly select 5-8 hashtags to keep the post fresh
+  const selectedHashtags = hashtags
+    .sort(() => 0.5 - Math.random())
+    .slice(0, Math.floor(Math.random() * 4) + 5);
+  
+  // 5. Final Assembly: Structure for maximum readability
   return `${greeting} ${quote}\n\n${cta}\n\n${selectedHashtags.join(" ")}`;
 }
 
