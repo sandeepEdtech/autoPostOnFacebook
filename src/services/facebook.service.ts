@@ -39,49 +39,34 @@ export async function postImageDirectlyToFacebook(
   }
 }
 
-export async function postToInstagram(imageUrl: string, caption: string) {
-  console.log("📸 Starting Instagram post process...");
-  
-  const IG_ID = env.IG_BUSINESS_ID;
-  const TOKEN = env.FB_PAGE_TOKEN;
+// services/facebook.service.ts
 
-  try {
-    // Step A: Create Media Container
-    console.log("1️⃣ Creating Media Container...");
-    const container = await axios.post(`https://graph.facebook.com/v19.0/${IG_ID}/media`, {
-      image_url: imageUrl,
-      caption: caption,
-      access_token: TOKEN
-    });
+export async function postToInstagram(fileName: string, caption: string) {
+  const publicImageUrl = `${process.env.SERVER_URL}/public/posts/${fileName}`;
+  const IG_ID = process.env.IG_BUSINESS_ID;
+  const TOKEN = process.env.FB_PAGE_TOKEN;
 
-    const creationId = container.data.id;
-    console.log(`✅ Container Created. ID: ${creationId}`);
+  console.log("1️⃣ Creating IG Container...");
+  const container = await axios.post(`https://graph.facebook.com/v19.0/${IG_ID}/media`, {
+    image_url: publicImageUrl,
+    caption: caption,
+    access_token: TOKEN
+  });
 
-    // Step B: Publish the Media
-    console.log("2️⃣ Publishing Media...");
-    const publish = await axios.post(`https://graph.facebook.com/v19.0/${IG_ID}/media_publish`, {
-      creation_id: creationId,
-      access_token: TOKEN
-    });
+  const creationId = container.data.id;
 
-    console.log("🚀 Instagram post successful!");
-    return publish.data;
+  // 🔥 ADD THIS DELAY HERE
+  console.log("⏳ Image is processing on Instagram's servers... Waiting 10 seconds.");
+  await new Promise(resolve => setTimeout(resolve, 10000)); 
 
-  } catch (error: any) {
-    // 🔥 Detailed Error Logging
-    if (error.response) {
-      console.error("❌ Instagram API Error Data:", JSON.stringify(error.response.data, null, 2));
-      console.error("Status Code:", error.response.status);
-    } else if (error.request) {
-      console.error("❌ No response received from Instagram. Network issue?");
-    } else {
-      console.error("❌ Error setting up request:", error.message);
-    }
-    
-    throw error; // Re-throw so your route can handle the 500 status
-  }
+  console.log("2️⃣ Publishing to Instagram...");
+  const publish = await axios.post(`https://graph.facebook.com/v19.0/${IG_ID}/media_publish`, {
+    creation_id: creationId,
+    access_token: TOKEN
+  });
+
+  return publish.data;
 }
-
 
   // Combined function to post to both platforms
 export async function postToBothPlatforms(

@@ -16,6 +16,7 @@ cron.schedule("0 */2 * * *", async () => {
   console.log("🕐 Running scheduled post...");
   try {
     await postToFacebookAutomatically();
+    await postToInstagramAutomatically()
     console.log("✅ Scheduled post completed successfully");
   } catch (error) {
     console.error("❌ Scheduled post failed:", error);
@@ -25,7 +26,8 @@ cron.schedule("0 */2 * * *", async () => {
 // Manual trigger endpoint
 app.get("/generate-and-post", async (_req, res) => {
   try {
-    const result = await postToFacebookAutomatically();
+//const result = await postToFacebookAutomatically();
+const result=await postToInstagramAutomatically()
     res.json({
       success: true,
       message: "Post created and published successfully",
@@ -61,8 +63,8 @@ async function postToFacebookAutomatically() {
   const caption = createEngagingCaption(quote);
   
   // Post to Facebook
-  // const result = await postImageDirectlyToFacebook(filePath, caption);
-  const result=await postToInstagram(filePath,caption)
+   const result = await postImageDirectlyToFacebook(filePath, caption);
+  //const result=await postToInstagram(filePath,caption)
   console.log("posted on instageam",result )
   // Save post details to log
   const logEntry = {
@@ -81,6 +83,52 @@ async function postToFacebookAutomatically() {
     quote: quote,
     caption: caption,
   };
+}
+
+async function postToInstagramAutomatically() {
+  console.log("🤖 Starting Automatic Instagram Flow...");
+
+  // 1. Get random quote
+  const quote = await getRandomQuote();
+  
+  // 2. Generate the image
+  const imageBuffer = await createImageFromTemplate(quote);
+  
+  // 3. Save locally first (so ngrok can serve it)
+  const fileName = `auto-post-${Date.now()}.png`;
+  const postsDir = path.join(process.cwd(), "public", "posts");
+  
+  if (!fs.existsSync(postsDir)) {
+    fs.mkdirSync(postsDir, { recursive: true });
+  }
+  
+  const filePath = path.join(postsDir, fileName);
+  fs.writeFileSync(filePath, imageBuffer);
+  
+  // 4. Create Caption
+  const caption = createEngagingCaption(quote);
+  
+  // 5. Post to Instagram
+  // IMPORTANT: We pass 'fileName', NOT 'filePath'
+  try {
+    const result = await postToInstagram(fileName, caption);
+    
+    console.log("✅ Instagram Auto-Post Success:", result.id);
+
+    // 6. Log entry
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      platform: "instagram",
+      postId: result.id,
+      image: fileName,
+    };
+    savePostLog(logEntry);
+
+    return result;
+  } catch (error) {
+    console.error("❌ Instagram Auto-Post Failed");
+    throw error;
+  }
 }
 
 function createEngagingCaption(quote: string): string {
