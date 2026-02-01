@@ -42,24 +42,27 @@ export async function postImageDirectlyToFacebook(
 // services/facebook.service.ts
 
 export async function postToInstagram(fileName: string, caption: string) {
+  // Combine the base URL with the static path and filename
   const publicImageUrl = `${process.env.SERVER_URL}/public/posts/${fileName}`;
+  
+  console.log("🔗 Sending this URL to Instagram:", publicImageUrl);
+
   const IG_ID = process.env.IG_BUSINESS_ID;
   const TOKEN = process.env.FB_PAGE_TOKEN;
 
-  console.log("1️⃣ Creating IG Container...");
+  // Step 1: Create Container
   const container = await axios.post(`https://graph.facebook.com/v19.0/${IG_ID}/media`, {
-    image_url: publicImageUrl,
+    image_url: publicImageUrl, // This MUST be a full https:// link
     caption: caption,
     access_token: TOKEN
   });
 
   const creationId = container.data.id;
 
-  // 🔥 ADD THIS DELAY HERE
-  console.log("⏳ Image is processing on Instagram's servers... Waiting 10 seconds.");
-  await new Promise(resolve => setTimeout(resolve, 10000)); 
+  // Step 2: Delay for processing (Instagram needs time to download it)
+  await new Promise(resolve => setTimeout(resolve, 10000));
 
-  console.log("2️⃣ Publishing to Instagram...");
+  // Step 3: Publish
   const publish = await axios.post(`https://graph.facebook.com/v19.0/${IG_ID}/media_publish`, {
     creation_id: creationId,
     access_token: TOKEN
