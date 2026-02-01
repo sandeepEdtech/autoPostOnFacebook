@@ -9,8 +9,7 @@ import { createImageFromTemplate,getRandomQuote } from "./services/imageTemplate
 import { env } from "./config/env";
 
 const app = express();
-const PORT = env.PORT || 3000;
-
+const PORT = process.env.PORT || 8080;
 
 // Type safety for our delay helper
 const delay = (ms: number): Promise<void> => new Promise(res => setTimeout(res, ms));
