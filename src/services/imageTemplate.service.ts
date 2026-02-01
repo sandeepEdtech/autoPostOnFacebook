@@ -513,7 +513,7 @@ function addViralElements(
   ctx.font = `18px Arial`;
   ctx.fillStyle = template.textColor === "#ffffff" ? 
     "rgba(255, 255, 255, 0.6)" : "rgba(0, 0, 0, 0.5)";
-  ctx.fillText("@DailyMotivationHub", x, 1050);
+  ctx.fillText("Daily Motivation", x, 1050);
 }
 
 async function addWatermark(ctx: any, width: number, height: number): Promise<void> {
