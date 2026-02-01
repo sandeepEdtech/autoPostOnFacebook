@@ -29,19 +29,17 @@ interface TemplateConfig {
   lineHeight?: number;
   gradient?: boolean;
   addWatermark?: boolean;
-  pattern?: boolean;
   usedCount?: number;
   lastUsed?: Date;
-  viralityScore?: number;
 }
 
 // Store template usage history
 let templateHistory: number[] = [];
 const MAX_HISTORY = 10; // Keep last 10 templates in memory
 
-// Enhanced templates with more variety
+// Templates array - 20 unique templates with same structure, different colors
 const TEMPLATES: TemplateConfig[] = [
-  // Gradient templates (High engagement)
+  // Original 5 templates
   {
     id: 1,
     name: "Purple Gradient",
@@ -55,65 +53,10 @@ const TEMPLATES: TemplateConfig[] = [
     lineHeight: 1.4,
     gradient: true,
     addWatermark: true,
-    pattern: true,
     usedCount: 0,
-    viralityScore: 9
   },
   {
     id: 2,
-    name: "Ocean Gradient",
-    bgColor: "linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%)",
-    textColor: "#2d3436",
-    fontSize: 50,
-    fontFamily: "Montserrat, Arial",
-    textX: 0.5,
-    textY: 0.5,
-    maxWidth: 0.8,
-    lineHeight: 1.4,
-    gradient: true,
-    addWatermark: false,
-    pattern: false,
-    usedCount: 0,
-    viralityScore: 8
-  },
-  {
-    id: 3,
-    name: "Sunset Gradient",
-    bgColor: "linear-gradient(45deg, #FF512F 0%, #F09819 100%)",
-    textColor: "#ffffff",
-    fontSize: 52,
-    fontFamily: "Inter, Arial",
-    textX: 0.5,
-    textY: 0.45,
-    maxWidth: 0.75,
-    lineHeight: 1.5,
-    gradient: true,
-    addWatermark: true,
-    pattern: true,
-    usedCount: 0,
-    viralityScore: 9
-  },
-  {
-    id: 4,
-    name: "Space Gradient",
-    bgColor: "linear-gradient(to right, #0f0c29, #302b63, #24243e)",
-    textColor: "#ffffff",
-    fontSize: 48,
-    fontFamily: "Montserrat, Arial",
-    textX: 0.5,
-    textY: 0.5,
-    maxWidth: 0.85,
-    lineHeight: 1.4,
-    gradient: true,
-    addWatermark: false,
-    pattern: true,
-    usedCount: 0,
-    viralityScore: 10
-  },
-  
-  // Solid color templates
-  {
-    id: 5,
     name: "Dark Elegance",
     bgColor: "#1a1a2e",
     textColor: "#e94560",
@@ -125,30 +68,11 @@ const TEMPLATES: TemplateConfig[] = [
     lineHeight: 1.5,
     gradient: false,
     addWatermark: false,
-    pattern: true,
     usedCount: 0,
-    viralityScore: 8
   },
   {
-    id: 6,
+    id: 3,
     name: "Clean White",
-    bgColor: "#ffffff",
-    textColor: "#000000",
-    fontSize: 44,
-    fontFamily: "Arial",
-    textX: 0.5,
-    textY: 0.5,
-    maxWidth: 0.7,
-    lineHeight: 1.6,
-    gradient: false,
-    addWatermark: true,
-    pattern: false,
-    usedCount: 0,
-    viralityScore: 7
-  },
-  {
-    id: 7,
-    name: "Professional Grey",
     bgColor: "#f8f9fa",
     textColor: "#212529",
     fontSize: 46,
@@ -159,14 +83,245 @@ const TEMPLATES: TemplateConfig[] = [
     lineHeight: 1.3,
     gradient: false,
     addWatermark: true,
-    pattern: false,
     usedCount: 0,
-    viralityScore: 7
+  },
+  {
+    id: 4,
+    name: "Ocean Gradient",
+    bgColor: "linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%)",
+    textColor: "#2d3436",
+    fontSize: 50,
+    fontFamily: "Montserrat, Arial",
+    textX: 0.5,
+    textY: 0.5,
+    maxWidth: 0.8,
+    lineHeight: 1.4,
+    gradient: true,
+    addWatermark: false,
+    usedCount: 0,
+  },
+  {
+    id: 5,
+    name: "Minimal Black",
+    bgColor: "#ffffff",
+    textColor: "#000000",
+    fontSize: 44,
+    fontFamily: "Arial",
+    textX: 0.5,
+    textY: 0.5,
+    maxWidth: 0.7,
+    lineHeight: 1.6,
+    gradient: false,
+    addWatermark: true,
+    usedCount: 0,
+  },
+  
+  // New Gradient Templates (similar to 1 & 4)
+  {
+    id: 6,
+    name: "Sunset Orange",
+    bgColor: "linear-gradient(135deg, #FF512F 0%, #F09819 100%)",
+    textColor: "#ffffff",
+    fontSize: 48,
+    fontFamily: "Montserrat, Arial",
+    textX: 0.5,
+    textY: 0.5,
+    maxWidth: 0.8,
+    lineHeight: 1.4,
+    gradient: true,
+    addWatermark: true,
+    usedCount: 0,
+  },
+  {
+    id: 7,
+    name: "Deep Blue",
+    bgColor: "linear-gradient(135deg, #0f0c29 0%, #302b63 100%)",
+    textColor: "#ffffff",
+    fontSize: 48,
+    fontFamily: "Montserrat, Arial",
+    textX: 0.5,
+    textY: 0.5,
+    maxWidth: 0.8,
+    lineHeight: 1.4,
+    gradient: true,
+    addWatermark: true,
+    usedCount: 0,
   },
   {
     id: 8,
-    name: "Power Red",
-    bgColor: "#dc3545",
+    name: "Green Nature",
+    bgColor: "linear-gradient(135deg, #56ab2f 0%, #a8e063 100%)",
+    textColor: "#2d3436",
+    fontSize: 50,
+    fontFamily: "Montserrat, Arial",
+    textX: 0.5,
+    textY: 0.5,
+    maxWidth: 0.8,
+    lineHeight: 1.4,
+    gradient: true,
+    addWatermark: false,
+    usedCount: 0,
+  },
+  {
+    id: 9,
+    name: "Pink Love",
+    bgColor: "linear-gradient(135deg, #ec008c 0%, #fc6767 100%)",
+    textColor: "#ffffff",
+    fontSize: 48,
+    fontFamily: "Montserrat, Arial",
+    textX: 0.5,
+    textY: 0.5,
+    maxWidth: 0.8,
+    lineHeight: 1.4,
+    gradient: true,
+    addWatermark: true,
+    usedCount: 0,
+  },
+  {
+    id: 10,
+    name: "Golden Sunset",
+    bgColor: "linear-gradient(135deg, #FFD700 0%, #FFA500 100%)",
+    textColor: "#2d3436",
+    fontSize: 50,
+    fontFamily: "Montserrat, Arial",
+    textX: 0.5,
+    textY: 0.5,
+    maxWidth: 0.8,
+    lineHeight: 1.4,
+    gradient: true,
+    addWatermark: false,
+    usedCount: 0,
+  },
+  
+  // New Dark Templates (similar to 2)
+  {
+    id: 11,
+    name: "Dark Blue",
+    bgColor: "#0a192f",
+    textColor: "#64ffda",
+    fontSize: 52,
+    fontFamily: "Inter, Arial",
+    textX: 0.5,
+    textY: 0.4,
+    maxWidth: 0.85,
+    lineHeight: 1.5,
+    gradient: false,
+    addWatermark: false,
+    usedCount: 0,
+  },
+  {
+    id: 12,
+    name: "Dark Purple",
+    bgColor: "#1a1a2e",
+    textColor: "#9d4edd",
+    fontSize: 52,
+    fontFamily: "Inter, Arial",
+    textX: 0.5,
+    textY: 0.4,
+    maxWidth: 0.85,
+    lineHeight: 1.5,
+    gradient: false,
+    addWatermark: false,
+    usedCount: 0,
+  },
+  {
+    id: 13,
+    name: "Dark Green",
+    bgColor: "#1a1a2e",
+    textColor: "#4ade80",
+    fontSize: 52,
+    fontFamily: "Inter, Arial",
+    textX: 0.5,
+    textY: 0.4,
+    maxWidth: 0.85,
+    lineHeight: 1.5,
+    gradient: false,
+    addWatermark: false,
+    usedCount: 0,
+  },
+  
+  // New Light Templates (similar to 3 & 5)
+  {
+    id: 14,
+    name: "Light Blue",
+    bgColor: "#f0f8ff",
+    textColor: "#1e40af",
+    fontSize: 46,
+    fontFamily: "Arial",
+    textX: 0.5,
+    textY: 0.45,
+    maxWidth: 0.75,
+    lineHeight: 1.3,
+    gradient: false,
+    addWatermark: true,
+    usedCount: 0,
+  },
+  {
+    id: 15,
+    name: "Light Green",
+    bgColor: "#f0fdf4",
+    textColor: "#166534",
+    fontSize: 46,
+    fontFamily: "Arial",
+    textX: 0.5,
+    textY: 0.45,
+    maxWidth: 0.75,
+    lineHeight: 1.3,
+    gradient: false,
+    addWatermark: true,
+    usedCount: 0,
+  },
+  {
+    id: 16,
+    name: "Light Purple",
+    bgColor: "#faf5ff",
+    textColor: "#7c3aed",
+    fontSize: 46,
+    fontFamily: "Arial",
+    textX: 0.5,
+    textY: 0.45,
+    maxWidth: 0.75,
+    lineHeight: 1.3,
+    gradient: false,
+    addWatermark: true,
+    usedCount: 0,
+  },
+  {
+    id: 17,
+    name: "Light Pink",
+    bgColor: "#fdf2f8",
+    textColor: "#be185d",
+    fontSize: 46,
+    fontFamily: "Arial",
+    textX: 0.5,
+    textY: 0.45,
+    maxWidth: 0.75,
+    lineHeight: 1.3,
+    gradient: false,
+    addWatermark: true,
+    usedCount: 0,
+  },
+  {
+    id: 18,
+    name: "Light Gray",
+    bgColor: "#f9fafb",
+    textColor: "#374151",
+    fontSize: 46,
+    fontFamily: "Arial",
+    textX: 0.5,
+    textY: 0.45,
+    maxWidth: 0.75,
+    lineHeight: 1.3,
+    gradient: false,
+    addWatermark: true,
+    usedCount: 0,
+  },
+  
+  // New Solid Color Templates
+  {
+    id: 19,
+    name: "Solid Blue",
+    bgColor: "#3b82f6",
     textColor: "#ffffff",
     fontSize: 54,
     fontFamily: "Montserrat, Arial",
@@ -176,46 +331,23 @@ const TEMPLATES: TemplateConfig[] = [
     lineHeight: 1.4,
     gradient: false,
     addWatermark: true,
-    pattern: true,
     usedCount: 0,
-    viralityScore: 9
   },
-  
-  // Pattern backgrounds
   {
-    id: 9,
-    name: "Geometric Pattern",
-    bgColor: "#0d6efd",
+    id: 20,
+    name: "Solid Green",
+    bgColor: "#10b981",
     textColor: "#ffffff",
-    fontSize: 50,
-    fontFamily: "Inter, Arial",
+    fontSize: 54,
+    fontFamily: "Montserrat, Arial",
     textX: 0.5,
     textY: 0.5,
     maxWidth: 0.8,
     lineHeight: 1.4,
     gradient: false,
-    addWatermark: false,
-    pattern: true,
+    addWatermark: true,
     usedCount: 0,
-    viralityScore: 8
   },
-  {
-    id: 10,
-    name: "Minimal Black",
-    bgColor: "#000000",
-    textColor: "#ffffff",
-    fontSize: 56,
-    fontFamily: "Montserrat, Arial",
-    textX: 0.5,
-    textY: 0.45,
-    maxWidth: 0.8,
-    lineHeight: 1.5,
-    gradient: false,
-    addWatermark: false,
-    pattern: false,
-    usedCount: 0,
-    viralityScore: 9
-  }
 ];
 
 // Function to get least recently used template
@@ -230,8 +362,8 @@ function getLeastUsedTemplate(): TemplateConfig {
     if (a.lastUsed && b.lastUsed) {
       return new Date(a.lastUsed).getTime() - new Date(b.lastUsed).getTime();
     }
-    // If no lastUsed, prioritize by viralityScore
-    return (b.viralityScore || 0) - (a.viralityScore || 0);
+    // If no lastUsed, random
+    return Math.random() - 0.5;
   });
   
   return sortedTemplates[0];
@@ -325,6 +457,15 @@ async function drawTemplate(
       gradient.addColorStop(0, "#0f0c29");
       gradient.addColorStop(0.5, "#302b63");
       gradient.addColorStop(1, "#24243e");
+    } else if (template.bgColor.includes("#56ab2f")) {
+      gradient.addColorStop(0, "#56ab2f");
+      gradient.addColorStop(1, "#a8e063");
+    } else if (template.bgColor.includes("#ec008c")) {
+      gradient.addColorStop(0, "#ec008c");
+      gradient.addColorStop(1, "#fc6767");
+    } else if (template.bgColor.includes("#FFD700")) {
+      gradient.addColorStop(0, "#FFD700");
+      gradient.addColorStop(1, "#FFA500");
     }
     
     ctx.fillStyle = gradient;
@@ -333,67 +474,6 @@ async function drawTemplate(
   }
   
   ctx.fillRect(0, 0, width, height);
-
-  // Add decorative elements
-  drawDecorativeElements(ctx, width, height, template);
-}
-
-function drawDecorativeElements(
-  ctx: any,
-  width: number,
-  height: number,
-  template: TemplateConfig
-): void {
-  ctx.save();
-  
-  if (template.pattern) {
-    // Draw geometric patterns for high-virality templates
-    if (template.id === 1 || template.id === 3 || template.id === 4) {
-      // Gradient templates - subtle overlay pattern
-      ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
-      for (let i = 0; i < width; i += 60) {
-        for (let j = 0; j < height; j += 60) {
-          ctx.beginPath();
-          ctx.arc(i, j, 5, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-    }
-    
-    if (template.id === 5 || template.id === 9) {
-      // Dark/Geometric templates - stars/circles
-      ctx.fillStyle = template.id === 5 ? "rgba(233, 69, 96, 0.1)" : "rgba(255, 255, 255, 0.1)";
-      for (let i = 0; i < 80; i++) {
-        const x = Math.random() * width;
-        const y = Math.random() * height;
-        const radius = Math.random() * 3 + 1;
-        ctx.beginPath();
-        ctx.arc(x, y, radius, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-    
-    if (template.id === 8) {
-      // Power Red template - diagonal lines
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
-      ctx.lineWidth = 2;
-      for (let i = -height; i < width + height; i += 30) {
-        ctx.beginPath();
-        ctx.moveTo(i, 0);
-        ctx.lineTo(i + height, height);
-        ctx.stroke();
-      }
-    }
-  }
-  
-  // Add border for some templates
-  if (template.id === 6 || template.id === 10) {
-    ctx.strokeStyle = template.id === 6 ? "#000000" : "#ffffff";
-    ctx.lineWidth = 10;
-    ctx.strokeRect(20, 20, width - 40, height - 40);
-  }
-  
-  ctx.restore();
 }
 
 function drawText(
@@ -405,7 +485,7 @@ function drawText(
 ): void {
   ctx.save();
   
-  // Enhanced text style with better readability
+  // Text style
   ctx.fillStyle = template.textColor || "#000000";
   ctx.font = `bold ${template.fontSize}px ${template.fontFamily}`;
   ctx.textAlign = "center";
@@ -417,113 +497,57 @@ function drawText(
   const maxWidth = width * (template.maxWidth || 0.8);
   const lineHeight = template.fontSize! * (template.lineHeight || 1.4);
 
-  // Wrap text with better algorithm
-  const lines = wrapTextEnhanced(ctx, text, maxWidth);
+  // Wrap text
+  const lines = wrapText(ctx, text, maxWidth);
   
-  // Enhanced shadow for better readability (viral tip)
-  ctx.shadowColor = "rgba(0, 0, 0, 0.4)";
-  ctx.shadowBlur = 15;
-  ctx.shadowOffsetX = 3;
-  ctx.shadowOffsetY = 3;
+  // Draw text with shadow for better readability
+  ctx.shadowColor = "rgba(0, 0, 0, 0.3)";
+  ctx.shadowBlur = 10;
+  ctx.shadowOffsetX = 2;
+  ctx.shadowOffsetY = 2;
 
   // Draw each line
   const startY = y - ((lines.length - 1) * lineHeight) / 2;
   lines.forEach((line, index) => {
-    // Add subtle text outline for better readability
-    ctx.strokeStyle = template.textColor === "#ffffff" ? "#000000" : "#ffffff";
-    ctx.lineWidth = 3;
-    ctx.strokeText(line, x, startY + index * lineHeight);
-    
-    // Fill text
     ctx.fillText(line, x, startY + index * lineHeight);
   });
 
-  // Add viral elements
-  addViralElements(ctx, text, x, startY + lines.length * lineHeight, template);
+  // Add author/quote mark if it's a quote
+  if (text.includes('"')) {
+    ctx.shadowBlur = 5;
+    ctx.font = `italic ${template.fontSize! * 0.6}px ${template.fontFamily}`;
+    ctx.fillText("― Daily Motivation", x, startY + lines.length * lineHeight + 30);
+  }
 
   ctx.restore();
 }
 
-function wrapTextEnhanced(ctx: any, text: string, maxWidth: number): string[] {
+function wrapText(ctx: any, text: string, maxWidth: number): string[] {
   const words = text.split(" ");
   const lines: string[] = [];
   let currentLine = words[0];
 
   for (let i = 1; i < words.length; i++) {
     const word = words[i];
-    const testLine = currentLine + " " + word;
-    const metrics = ctx.measureText(testLine);
-    
-    if (metrics.width < maxWidth) {
-      currentLine = testLine;
+    const width = ctx.measureText(currentLine + " " + word).width;
+    if (width < maxWidth) {
+      currentLine += " " + word;
     } else {
       lines.push(currentLine);
       currentLine = word;
     }
   }
   lines.push(currentLine);
-  
-  // Limit to max 4 lines for better readability
-  if (lines.length > 4) {
-    const firstThree = lines.slice(0, 3);
-    const remaining = lines.slice(3).join(" ");
-    // Truncate remaining text and add ellipsis
-    return [...firstThree, remaining.substring(0, 50) + "..."];
-  }
-  
   return lines;
-}
-
-function addViralElements(
-  ctx: any,
-  text: string,
-  x: number,
-  y: number,
-  template: TemplateConfig
-): void {
-  // Add author/quote mark with styling
-  if (text.includes('-')) {
-    const author = text.split('-').pop()?.trim();
-    if (author) {
-      ctx.shadowBlur = 8;
-      ctx.font = `italic ${template.fontSize! * 0.5}px ${template.fontFamily}`;
-      ctx.fillStyle = template.textColor === "#ffffff" ? 
-        "rgba(255, 255, 255, 0.8)" : "rgba(0, 0, 0, 0.7)";
-      ctx.fillText(`― ${author}`, x, y + 40);
-    }
-  } else {
-    // Add call to action for non-author quotes
-    const ctas = [
-      "🌟 Double tap if you agree!",
-      "💬 Share your thoughts below!",
-      "🔥 Save this for motivation!",
-      "🚀 Tag someone who needs this!",
-      "📌 Bookmark for later!"
-    ];
-    const cta = ctas[Math.floor(Math.random() * ctas.length)];
-    
-    ctx.shadowBlur = 5;
-    ctx.font = `bold ${template.fontSize! * 0.4}px ${template.fontFamily}`;
-    ctx.fillStyle = template.textColor === "#ffffff" ? 
-      "rgba(255, 255, 255, 0.9)" : "rgba(0, 0, 0, 0.8)";
-    ctx.fillText(cta, x, y + 40);
-  }
-  
-  // Add social media handle for virality
-  ctx.font = `18px Arial`;
-  ctx.fillStyle = template.textColor === "#ffffff" ? 
-    "rgba(255, 255, 255, 0.6)" : "rgba(0, 0, 0, 0.5)";
-  ctx.fillText("Daily Motivation", x, 1050);
 }
 
 async function addWatermark(ctx: any, width: number, height: number): Promise<void> {
   ctx.save();
-  // Subtle watermark
-  ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
-  ctx.font = "16px Arial";
+  ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+  ctx.font = "20px Arial";
   ctx.textAlign = "right";
   ctx.textBaseline = "bottom";
-  ctx.fillText("Daily Motivation", width - 20, height - 20);
+  ctx.fillText("@MotivationDaily", width - 20, height - 20);
   ctx.restore();
 }
 
@@ -553,7 +577,6 @@ export function getTemplateStats(): any {
       name: t.name,
       usedCount: t.usedCount || 0,
       lastUsed: t.lastUsed,
-      viralityScore: t.viralityScore
     })),
     recentHistory: templateHistory.slice(-10)
   };
@@ -567,7 +590,6 @@ export function resetTemplateUsage(): void {
   });
   templateHistory = [];
 }
-
 // import { createCanvas, loadImage, registerFont } from "canvas";
 // import path from "path";
 // import fs from "fs";
