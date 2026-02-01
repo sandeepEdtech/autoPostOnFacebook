@@ -20,64 +20,75 @@ const delay = (ms: number): Promise<void> => new Promise(res => setTimeout(res, 
 const scheduleDailyPosts = () => {
   console.log("📅 Planning today's social media schedule...");
 
-  const totalPosts = 5;
-  const startHour = 9; // 9:00 AM
-  const endHour = 22;  // 10:00 PM
-  const postsScheduled: number[] = [];
+  // Viral windows based on 2026 engagement data
+  const windows = [
+    { name: "Morning Peak", start: 8, end: 10 },    // 8-10 AM
+    { name: "Lunch Rush", start: 12, end: 14 },     // 12-2 PM
+    { name: "Afternoon Slump", start: 16, end: 18 }, // 4-6 PM
+    { name: "Prime Time", start: 19, end: 21 },     // 7-9 PM
+    { name: "Late Night", start: 22, end: 23 }      // 10-11 PM
+  ];
 
-  for (let i = 0; i < totalPosts; i++) {
-    // Generate a random hour between 9 and 22
-    let randomHour = Math.floor(Math.random() * (endHour - startHour + 1)) + startHour;
-    let randomMinute = Math.floor(Math.random() * 60);
+  windows.forEach((window, index) => {
+    // 1. Generate random time within this specific window
+    const randomHour = Math.floor(Math.random() * (window.end - window.start + 1)) + window.start;
+    const randomMinute = Math.floor(Math.random() * 60);
 
-    // Ensure at least a 2-hour gap from previous scheduled posts
-    const timeInMinutes = randomHour * 60 + randomMinute;
-    const isTooClose = postsScheduled.some(p => Math.abs(p - timeInMinutes) < 120);
-
-    if (isTooClose && i < 10) { // Try again if too close, max 10 attempts
-      i--; 
-      continue;
-    }
-
-    postsScheduled.push(timeInMinutes);
-
-    // Schedule the actual post using a one-time cron expression
+    // 2. Schedule the Cron
     cron.schedule(`${randomMinute} ${randomHour} * * *`, async () => {
-      // Add a small extra "jitter" of 0-5 minutes so it's never exactly on the minute
-      const jitter = Math.floor(Math.random() * 5 * 60 * 1000);
-      await delay(jitter);
+      // Human Behavior: Add a 0-10 minute "jitter" so it's not exactly on the minute
+      const jitterMs = Math.floor(Math.random() * 10 * 60 * 1000);
+      await delay(jitterMs);
 
       try {
-        console.log(`🚀 Executing planned post at ${randomHour}:${randomMinute}`);
-        await postToFacebookAutomatically();
+        console.log(`🚀 [${window.name}] Executing post at ${randomHour}:${randomMinute}`);
         await postToInstagramAutomatically();
+        await postToFacebookAutomatically();
       } catch (error) {
-        console.error("❌ Post failed:", error);
+        console.error(`❌ [${window.name}] Post failed:`, error);
       }
     });
 
-    console.log(`📍 Post ${i + 1} set for ${randomHour}:${randomMinute.toString().padStart(2, '0')}`);
-  }
+    console.log(`📍 Post ${index + 1} (${window.name}) set for ${randomHour}:${randomMinute.toString().padStart(2, '0')}`);
+  });
 };
 
-// RUN MASTER SCHEDULER: Every day at midnight
+/**
+ * Midnight Cleanup: Deletes all generated images from the 'public/posts' folder.
+ * Runs every day at 12:05 AM to keep backend storage light.
+ */
+cron.schedule("5 0 * * *", () => {
+  const postsFolder = path.join(process.cwd(), "public", "posts");
+
+  console.log("🧹 Starting daily cleanup of 'public/posts' folder...");
+
+  if (fs.existsSync(postsFolder)) {
+    fs.readdir(postsFolder, (err, files) => {
+      if (err) {
+        console.error("❌ Cleanup Error:", err);
+        return;
+      }
+
+      for (const file of files) {
+        // Skip hidden files like .gitkeep
+        if (file.startsWith('.')) continue;
+
+        fs.unlink(path.join(postsFolder, file), (err) => {
+          if (err) console.error(`❌ Could not delete ${file}:`, err);
+        });
+      }
+      console.log(`✅ Cleanup complete. Deleted ${files.length} files.`);
+    });
+  }
+});
+
+// Reset scheduler every day at midnight
 cron.schedule("0 0 * * *", () => {
   scheduleDailyPosts();
 });
 
-// Also run it immediately on startup so you don't have to wait until midnight
+// Run immediately on startup so you don't have to wait until midnight
 scheduleDailyPosts();
-// Auto-post every 2 hours
-// cron.schedule("* * * * *", async () => {
-//     console.log("🕐 Running scheduled post...");
-//   try {
-//     await postToFacebookAutomatically();
-//     await postToInstagramAutomatically()
-//     console.log("✅ Scheduled post completed successfully");
-//   } catch (error) {
-//     console.error("❌ Scheduled post failed:", error);
-//   }
-// });
 
 // Manual trigger endpoint
 app.get("/generate-and-post", async (_req, res) => {
@@ -140,9 +151,6 @@ async function postToFacebookAutomatically() {
     caption: caption,
   };
 }
-
-
-
 
 // Test route to verify image generation and public URL access
 app.get("/test-image-gen", async (_req, res) => {
@@ -316,10 +324,8 @@ app.get("/", (_req, res) => {
   `);
 });
 
-// 1. Convert to number and provide a fallback
 const PORT: number = Number(process.env.PORT) || 8080;
 
-// 2. Now the types match perfectly
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server is live on port ${PORT}`);
   console.log(`📅 Daily Master Scheduler is active.`);
