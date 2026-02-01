@@ -11,17 +11,74 @@ import { env } from "./config/env";
 const app = express();
 const PORT = env.PORT || 3000;
 
-// Auto-post every 2 hours
-cron.schedule("0 */2 * * *", async () => {
-  console.log("🕐 Running scheduled post...");
-  try {
-    await postToFacebookAutomatically();
-    await postToInstagramAutomatically()
-    console.log("✅ Scheduled post completed successfully");
-  } catch (error) {
-    console.error("❌ Scheduled post failed:", error);
+
+// Type safety for our delay helper
+const delay = (ms: number): Promise<void> => new Promise(res => setTimeout(res, ms));
+
+/**
+ * Logic to schedule 5 random posts for the day
+ */
+const scheduleDailyPosts = () => {
+  console.log("📅 Planning today's social media schedule...");
+
+  const totalPosts = 5;
+  const startHour = 9; // 9:00 AM
+  const endHour = 22;  // 10:00 PM
+  const postsScheduled: number[] = [];
+
+  for (let i = 0; i < totalPosts; i++) {
+    // Generate a random hour between 9 and 22
+    let randomHour = Math.floor(Math.random() * (endHour - startHour + 1)) + startHour;
+    let randomMinute = Math.floor(Math.random() * 60);
+
+    // Ensure at least a 2-hour gap from previous scheduled posts
+    const timeInMinutes = randomHour * 60 + randomMinute;
+    const isTooClose = postsScheduled.some(p => Math.abs(p - timeInMinutes) < 120);
+
+    if (isTooClose && i < 10) { // Try again if too close, max 10 attempts
+      i--; 
+      continue;
+    }
+
+    postsScheduled.push(timeInMinutes);
+
+    // Schedule the actual post using a one-time cron expression
+    cron.schedule(`${randomMinute} ${randomHour} * * *`, async () => {
+      // Add a small extra "jitter" of 0-5 minutes so it's never exactly on the minute
+      const jitter = Math.floor(Math.random() * 5 * 60 * 1000);
+      await delay(jitter);
+
+      try {
+        console.log(`🚀 Executing planned post at ${randomHour}:${randomMinute}`);
+        await postToFacebookAutomatically();
+        await postToInstagramAutomatically();
+      } catch (error) {
+        console.error("❌ Post failed:", error);
+      }
+    });
+
+    console.log(`📍 Post ${i + 1} set for ${randomHour}:${randomMinute.toString().padStart(2, '0')}`);
   }
+};
+
+// RUN MASTER SCHEDULER: Every day at midnight
+cron.schedule("0 0 * * *", () => {
+  scheduleDailyPosts();
 });
+
+// Also run it immediately on startup so you don't have to wait until midnight
+scheduleDailyPosts();
+// Auto-post every 2 hours
+// cron.schedule("* * * * *", async () => {
+//     console.log("🕐 Running scheduled post...");
+//   try {
+//     await postToFacebookAutomatically();
+//     await postToInstagramAutomatically()
+//     console.log("✅ Scheduled post completed successfully");
+//   } catch (error) {
+//     console.error("❌ Scheduled post failed:", error);
+//   }
+// });
 
 // Manual trigger endpoint
 app.get("/generate-and-post", async (_req, res) => {
