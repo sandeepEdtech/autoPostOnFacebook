@@ -251,11 +251,18 @@ function savePostLog(logEntry: any): void {
 app.use("/public", express.static(path.join(process.cwd(), "public")));
 
 app.get("/", (_req, res) => {
+
+  console.log("pleas save me and dont hit me")
   res.send(`
-    <h1>Auto Social Poster</h1>
-    <p>Posts run automatically every 2 hours</p>
-    <p><a href="/generate-and-post">Trigger Manual Post</a></p>
-    <p>Next post: ${new Date(Date.now() + 2 * 60 * 60 * 1000).toLocaleTimeString()}</p>
+    <div style="font-family: sans-serif; padding: 20px;">
+      <h1>🚀 Auto Social Poster: ONLINE</h1>
+      <p><strong>Status:</strong> The Daily Master Scheduler is active (5 random posts/day).</p>
+      <hr />
+      <p><a href="/generate-and-post" style="background: #007bff; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">🔥 Trigger Manual Post Right Now</a></p>
+      <hr />
+      <p>Current Server Time: ${new Date().toLocaleTimeString()}</p>
+      <p><small>Check Zeabur logs to see the specific 5 times chosen for today.</small></p>
+    </div>
   `);
 });
 
