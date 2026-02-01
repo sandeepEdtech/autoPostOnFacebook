@@ -9,7 +9,7 @@ import { createImageFromTemplate,getRandomQuote } from "./services/imageTemplate
 import { env } from "./config/env";
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+// const PORT = process.env.PORT || 8080;
 
 // Type safety for our delay helper
 const delay = (ms: number): Promise<void> => new Promise(res => setTimeout(res, ms));
@@ -259,11 +259,14 @@ app.get("/", (_req, res) => {
   `);
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`⏰ Auto-posting scheduled every 2 hours`);
-});
+// 1. Convert to number and provide a fallback
+const PORT: number = Number(process.env.PORT) || 8080;
 
+// 2. Now the types match perfectly
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Server is live on port ${PORT}`);
+  console.log(`📅 Daily Master Scheduler is active.`);
+});
 // import express from "express";
 // import mongoose from "mongoose";
 // import path from "path";
