@@ -7,6 +7,7 @@ import fs from "fs";
 import { postImageDirectlyToFacebook, postToInstagram } from "./services/facebook.service";
 import { createImageFromTemplate,getRandomQuote } from "./services/imageTemplate.service";
 import { env } from "./config/env";
+import axios from "axios";
 
 const app = express();
 // const PORT = process.env.PORT || 8080;
@@ -218,12 +219,14 @@ app.get("/test-image-gen", async (_req, res) => {
 
 
 async function postToInstagramAutomatically() {
-  console.log("🤖 Starting Render-Optimized Instagram Flow...");
+  console.log("🤖 Starting Render-Verified Instagram Flow...");
 
   const quote = await getRandomQuote();
   const imageBuffer = await createImageFromTemplate(quote);
   const fileName = `auto-post-${Date.now()}.png`;
-  const postsDir = path.join(process.cwd(), "public", "posts");
+  
+  // Use a reliable path construction for Render
+  const postsDir = path.resolve(process.cwd(), "public", "posts");
   
   if (!fs.existsSync(postsDir)) {
     fs.mkdirSync(postsDir, { recursive: true });
@@ -235,31 +238,38 @@ async function postToInstagramAutomatically() {
   const publicUrl = `${process.env.SERVER_URL}/public/posts/${fileName}`;
   const caption = createEngagingCaption(quote);
 
-  // --- RETRY LOGIC START ---
   let attempts = 0;
   const maxAttempts = 3;
-  const delayTimes = [15000, 30000, 45000]; // Increasing wait times (15s, 30s, 45s)
+  // Shorter check interval but more checks
+  const waitInterval = 15000; 
 
   while (attempts < maxAttempts) {
     try {
-      console.log(`⏳ [Attempt ${attempts + 1}] Waiting ${delayTimes[attempts] / 1000}s for Render sync...`);
-      await new Promise(resolve => setTimeout(resolve, delayTimes[attempts]));
-
-      // Execute the actual Instagram API call
-      const result = await postToInstagram(fileName, caption);
+      console.log(`🔍 [Attempt ${attempts + 1}] Verifying URL availability: ${publicUrl}`);
       
-      console.log("✅ Instagram Auto-Post Success:", result.id);
-      savePostLog({ timestamp: new Date().toISOString(), platform: "instagram", postId: result.id, image: fileName });
-      return result;
+      // SELF-VERIFICATION: Check if the file is actually reachable
+      const checkResponse = await axios.get(publicUrl).catch(() => null);
+
+      if (checkResponse && checkResponse.status === 200) {
+        console.log("✅ URL is Live! Proceeding to Instagram API...");
+        const result = await postToInstagram(fileName, caption);
+        
+        console.log("✅ Instagram Auto-Post Success:", result.id);
+        savePostLog({ timestamp: new Date().toISOString(), platform: "instagram", postId: result.id, image: fileName });
+        return result;
+      } else {
+        throw new Error("URL returned 404 or was unreachable");
+      }
 
     } catch (error: any) {
       attempts++;
-      console.error(`⚠️ Attempt ${attempts} failed. Render URL likely not ready.`);
+      console.warn(`⚠️ Attempt ${attempts}: Image not reachable yet. Waiting ${waitInterval/1000}s...`);
       
       if (attempts >= maxAttempts) {
-        console.error("❌ All attempts failed. Instagram cannot reach the Render URL.");
+        console.error("❌ ERROR: Image never became public. Check your Render Static folder settings.");
         throw error;
       }
+      await new Promise(resolve => setTimeout(resolve, waitInterval));
     }
   }
 }
