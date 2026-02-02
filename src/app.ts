@@ -224,7 +224,7 @@ async function postToInstagramAutomatically() {
   // 2. Generate the image
   const imageBuffer = await createImageFromTemplate(quote);
   
-  // 3. Save locally first (so ngrok can serve it)
+  // 3. Save to the public/posts directory
   const fileName = `auto-post-${Date.now()}.png`;
   const postsDir = path.join(process.cwd(), "public", "posts");
   
@@ -234,12 +234,20 @@ async function postToInstagramAutomatically() {
   
   const filePath = path.join(postsDir, fileName);
   fs.writeFileSync(filePath, imageBuffer);
+
+  // --- NEW RENDER FIX START ---
+  // Construct the URL to check visibility
+  const publicUrl = `${process.env.SERVER_URL}/public/posts/${fileName}`;
+  console.log(`⏳ Image saved. Waiting 10s for Render to serve: ${publicUrl}`);
+
+  // Wait 10 seconds to ensure Render's static server is ready
+  await new Promise(resolve => setTimeout(resolve, 10000));
+  // --- NEW RENDER FIX END ---
   
   // 4. Create Caption
   const caption = createEngagingCaption(quote);
   
   // 5. Post to Instagram
-  // IMPORTANT: We pass 'fileName', NOT 'filePath'
   try {
     const result = await postToInstagram(fileName, caption);
     
@@ -256,7 +264,7 @@ async function postToInstagramAutomatically() {
 
     return result;
   } catch (error) {
-    console.error("❌ Instagram Auto-Post Failed");
+    console.error("❌ Instagram Auto-Post Failed. The URL might not have been ready yet.");
     throw error;
   }
 }
