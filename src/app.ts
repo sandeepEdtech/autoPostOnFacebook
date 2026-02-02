@@ -215,16 +215,13 @@ app.get("/test-image-gen", async (_req, res) => {
     res.status(500).send(`<h1>❌ Test Failed</h1><p>${error.message}</p>`);
   }
 });
-async function postToInstagramAutomatically() {
-  console.log("🤖 Starting Automatic Instagram Flow...");
 
-  // 1. Get random quote
+
+async function postToInstagramAutomatically() {
+  console.log("🤖 Starting Render-Optimized Instagram Flow...");
+
   const quote = await getRandomQuote();
-  
-  // 2. Generate the image
   const imageBuffer = await createImageFromTemplate(quote);
-  
-  // 3. Save to the public/posts directory
   const fileName = `auto-post-${Date.now()}.png`;
   const postsDir = path.join(process.cwd(), "public", "posts");
   
@@ -234,38 +231,36 @@ async function postToInstagramAutomatically() {
   
   const filePath = path.join(postsDir, fileName);
   fs.writeFileSync(filePath, imageBuffer);
-
-  // --- NEW RENDER FIX START ---
-  // Construct the URL to check visibility
+  
   const publicUrl = `${process.env.SERVER_URL}/public/posts/${fileName}`;
-  console.log(`⏳ Image saved. Waiting 10s for Render to serve: ${publicUrl}`);
-
-  // Wait 10 seconds to ensure Render's static server is ready
-  await new Promise(resolve => setTimeout(resolve, 10000));
-  // --- NEW RENDER FIX END ---
-  
-  // 4. Create Caption
   const caption = createEngagingCaption(quote);
-  
-  // 5. Post to Instagram
-  try {
-    const result = await postToInstagram(fileName, caption);
-    
-    console.log("✅ Instagram Auto-Post Success:", result.id);
 
-    // 6. Log entry
-    const logEntry = {
-      timestamp: new Date().toISOString(),
-      platform: "instagram",
-      postId: result.id,
-      image: fileName,
-    };
-    savePostLog(logEntry);
+  // --- RETRY LOGIC START ---
+  let attempts = 0;
+  const maxAttempts = 3;
+  const delayTimes = [15000, 30000, 45000]; // Increasing wait times (15s, 30s, 45s)
 
-    return result;
-  } catch (error) {
-    console.error("❌ Instagram Auto-Post Failed. The URL might not have been ready yet.");
-    throw error;
+  while (attempts < maxAttempts) {
+    try {
+      console.log(`⏳ [Attempt ${attempts + 1}] Waiting ${delayTimes[attempts] / 1000}s for Render sync...`);
+      await new Promise(resolve => setTimeout(resolve, delayTimes[attempts]));
+
+      // Execute the actual Instagram API call
+      const result = await postToInstagram(fileName, caption);
+      
+      console.log("✅ Instagram Auto-Post Success:", result.id);
+      savePostLog({ timestamp: new Date().toISOString(), platform: "instagram", postId: result.id, image: fileName });
+      return result;
+
+    } catch (error: any) {
+      attempts++;
+      console.error(`⚠️ Attempt ${attempts} failed. Render URL likely not ready.`);
+      
+      if (attempts >= maxAttempts) {
+        console.error("❌ All attempts failed. Instagram cannot reach the Render URL.");
+        throw error;
+      }
+    }
   }
 }
 
