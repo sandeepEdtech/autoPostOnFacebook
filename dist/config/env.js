@@ -23,5 +23,7 @@ exports.env = {
     BUFFER_TOKEN: process.env.BUFFER_TOKEN,
     // ✅ FACEBOOK (NEW — THIS FIXES YOUR ERROR)
     FB_PAGE_ID: process.env.FB_PAGE_ID || "",
-    FB_PAGE_TOKEN: process.env.FB_PAGE_TOKEN || ""
+    FB_PAGE_TOKEN: process.env.FB_PAGE_TOKEN || "",
+    SERVER_URL: process.env.SERVER_URL || "",
+    IG_BUSINESS_ID: process.env.IG_BUSINESS_ID || ""
 };

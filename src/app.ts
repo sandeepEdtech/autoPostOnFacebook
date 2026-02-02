@@ -155,47 +155,63 @@ async function postToFacebookAutomatically() {
 // Test route to verify image generation and public URL access
 app.get("/test-image-gen", async (_req, res) => {
   try {
-    console.log("🧪 Running Image Generation Test...");
+    console.log("🧪 Running Bulk Image Generation (5 Posts)...");
 
-    // 1. Get random quote
-    const quote = await getRandomQuote();
-    
-    // 2. Generate the image buffer
-    const imageBuffer = await createImageFromTemplate(quote);
-    
-    // 3. Define filename and directory
-    const fileName = `test-${Date.now()}.png`;
     const postsDir = path.join(process.cwd(), "public", "posts");
-    
-    // Ensure directory exists
     if (!fs.existsSync(postsDir)) {
       fs.mkdirSync(postsDir, { recursive: true });
     }
-    
-    // 4. Save to disk
-    const filePath = path.join(postsDir, fileName);
-    fs.writeFileSync(filePath, imageBuffer);
 
-    // 5. Construct the public URL
-    const publicUrl = `${process.env.SERVER_URL}/public/posts/${fileName}`;
+    const generatedPosts = [];
 
-    // 6. Return a simple HTML page showing the image
+    // Loop to generate 5 distinct posts
+    for (let i = 0; i < 5; i++) {
+      // 1. Get random quote
+      const quote = await getRandomQuote();
+      
+      // 2. Generate the image buffer
+      const imageBuffer = await createImageFromTemplate(quote);
+      
+      // 3. Define filename
+      const fileName = `test-bulk-${i}-${Date.now()}.png`;
+      const filePath = path.join(postsDir, fileName);
+      
+      // 4. Save to disk
+      fs.writeFileSync(filePath, imageBuffer);
+
+      // 5. Store data for the UI
+      generatedPosts.push({
+        url: `${process.env.SERVER_URL}/public/posts/${fileName}`,
+        quote: quote
+      });
+
+      // Optional: Tiny delay to ensure unique timestamps/randomness
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    // 6. Return HTML grid showing all 5 images
+    const imageHtml = generatedPosts.map(post => `
+      <div style="border: 2px solid #ddd; padding: 10px; border-radius: 8px;">
+        <img src="${post.url}" alt="Generated Quote" style="max-width: 300px; display: block; margin-bottom: 10px;" />
+        <p style="font-size: 12px; color: #666;">${post.quote}</p>
+        <a href="${post.url}" target="_blank" style="font-size: 11px;">View Full Image</a>
+      </div>
+    `).join('');
+
     res.send(`
       <div style="font-family: sans-serif; padding: 20px; text-align: center;">
-        <h1>🎨 Image Generation Test</h1>
-        <p>If you see the image below, your <strong>SERVER_URL</strong> and <strong>Static Routing</strong> are working!</p>
-        <div style="margin: 20px auto; border: 5px solid #333; display: inline-block;">
-            <img src="${publicUrl}" alt="Generated Quote" style="max-width: 500px;" />
+        <h1>🎨 Bulk Image Generation Test (5 Posts)</h1>
+        <p>Verified: <strong>SERVER_URL</strong> and <strong>Static Routing</strong> are active.</p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-top: 20px;">
+            ${imageHtml}
         </div>
-        <p><strong>Generated URL:</strong> <a href="${publicUrl}" target="_blank">${publicUrl}</a></p>
-        <p><strong>Quote Used:</strong> "${quote}"</p>
-        <hr />
-        <a href="/" style="text-decoration: none; color: #007bff;">⬅ Back to Dashboard</a>
+        <hr style="margin: 40px 0;" />
+        <a href="/" style="text-decoration: none; color: #007bff; font-weight: bold;">⬅ Back to Dashboard</a>
       </div>
     `);
 
   } catch (error: any) {
-    console.error("❌ Test Failed:", error.message);
+    console.error("❌ Bulk Test Failed:", error.message);
     res.status(500).send(`<h1>❌ Test Failed</h1><p>${error.message}</p>`);
   }
 });
