@@ -11,7 +11,12 @@ import axios from "axios";
 
 const app = express();
 // const PORT = process.env.PORT || 8080;
-
+// Add this exact line in your app.ts
+app.use("/public", express.static(path.join(process.cwd(), "public"), {
+  setHeaders: (res) => {
+    res.set("Access-Control-Allow-Origin", "*"); // Allows Meta to crawl the file
+  }
+}));
 // Type safety for our delay helper
 const delay = (ms: number): Promise<void> => new Promise(res => setTimeout(res, ms));
 
