@@ -3,11 +3,14 @@ import express from "express";
 import cron from "node-cron";
 import path from "path";
 import fs from "fs";
+
+import { execSync } from 'child_process';
 // import { createImageFromTemplate, getRandomQuote } from
 import { postImageDirectlyToFacebook, postToInstagram } from "./services/facebook.service";
 import { createImageFromTemplate,getRandomQuote } from "./services/imageTemplate.service";
 import { env } from "./config/env";
 import axios from "axios";
+import { createTalkingInfluencerReel } from "./services/video.service";
 
 const app = express();
 // const PORT = process.env.PORT || 8080;
@@ -364,178 +367,98 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server is live on port ${PORT}`);
   console.log(`📅 Daily Master Scheduler is active.`);
 });
-// import express from "express";
-// import mongoose from "mongoose";
-// import path from "path";
-// import fs from "fs";
-// import cron from "node-cron";
 
-// import { env } from "./config/env";
-// import { getRandomQuote } from "./services/quote.service";
-// import { createImageFromTemplate } from "./services/imageTemplate.service";
-// import { cleanupOldImages } from "./jobs/autoPost.job";
-// import { postImageDirectlyToFacebook } from "./services/facebook.service";
 
-// export const app = express();
+app.get('/generate-hindi-motivation', async (req, res) => {
+  try {
+    const hindiQuote = "सफलता का कोई मंत्र नहीं है, यह सिर्फ कड़ी मेहनत का नतीजा है।";
+    const influencerImage = "influencer_1.png"; // Your red dress image
+    
+    const outputPath = path.join(process.cwd(), 'public/posts', `hindi-reel-${Date.now()}.mp4`);
 
-// /* =========================
-//    BASIC MIDDLEWARE
-// ========================= */
-// app.use(express.json());
+    console.log("🚀 Starting Hindi Talking Head Process...");
+    
+    // This calls the service we will write below
+    await createTalkingInfluencerReel(hindiQuote, influencerImage, outputPath);
 
-// /* 🔥 IMPORTANT: skip ngrok warning */
-// app.use((req, res, next) => {
-//   res.setHeader("ngrok-skip-browser-warning", "true");
-//   next();
-// });
+    res.json({ 
+      success: true, 
+      message: "Hindi Motivational Reel Generated!",
+      file: path.basename(outputPath)
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+// Local Test Route: Generate video without posting
+app.get("/test-video-gen", async (_req, res) => {
+  try {
+    const videoFileName = `test-reel-${Date.now()}.mp4`;
+    
+    // Ensure the directories exist
+    const postsDir = path.resolve(process.cwd(), "public", "posts");
+    if (!fs.existsSync(postsDir)) fs.mkdirSync(postsDir, { recursive: true });
 
-// /* =========================
-//    STATIC FILES
-// ========================= */
-// app.use(
-//   "/public",
-//   express.static(path.join(process.cwd(), "public"))
-// );
+    const outputPath = path.join(postsDir, videoFileName);
+    const imageFolder = path.resolve(process.cwd(), "public", "influencer_images");
+    const audioPath = path.resolve(process.cwd(), "public", "music", "trending_track.mp3");
 
-// /* =========================
-//    DATABASE
-// ========================= */
-// mongoose
-//   .connect(env.MONGO_URI)
-//   .then(() => console.log("✅ MongoDB connected"))
-//   .catch((err) => console.error("❌ MongoDB error", err));
+    // 1. Verify files exist before starting
+    if (!fs.existsSync(imageFolder) || fs.readdirSync(imageFolder).length === 0) {
+      throw new Error("Missing images in public/influencer_images");
+    }
+    if (!fs.existsSync(audioPath)) {
+      throw new Error("Missing audio file at public/music/trending_track.mp3");
+    }
 
-// /* =========================
-//    HEALTH CHECK
-// ========================= */
-// app.get("/", (_req, res) => {
-//   res.send("AI Social Poster is running 🚀");
-// });
+    console.log("🚀 Starting local video generation test...");
+    
+    // 2. Generate the video
+   ///await createRhythmicDanceVideo(imageFolder, audioPath, outputPath);
 
-// /* =========================
-//    TEST IMAGE GENERATION
-// ========================= */
-// app.get("/test-image", async (_req, res) => {
-//   try {
-//     const text = getRandomQuote();
-//     const imageBuffer = await createImageFromTemplate("1", text);
+    console.log(`✅ Success! Video saved to: ${outputPath}`);
 
-//     const fileName = `test-${Date.now()}.png`;
-//     const filePath = path.join(process.cwd(), "public", "posts", fileName);
+    res.json({
+      success: true,
+      message: "Test video generated locally",
+      filePath: outputPath,
+      viewUrl: `http://localhost:${process.env.PORT || 5000}/public/posts/${videoFileName}`
+    });
+  } catch (error: any) {
+    console.error("❌ Test Failed:", error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
-//     fs.writeFileSync(filePath, imageBuffer);
+app.get("/generate-motivational-reel", async (req, res) => {
+  try {
+    const timestamp = Date.now();
+    const rootDir = process.cwd();
+    const imagePath = path.join(rootDir, 'public', 'influencer_images', 'influencer_1.png');
+    const audioPath = path.join(rootDir, 'public', 'music', `audio_${timestamp}.mp3`);
+    
+    // 1. Generate Hindi Voice
+    const hindiQuote = "सफलता का कोई मंत्र नहीं है, यह सिर्फ कड़ी मेहनत का नतीजा है।";
+    execSync(`python3 -c "from gtts import gTTS; gTTS('${hindiQuote}', lang='hi').save('${audioPath}')"`);
 
-//     res.json({
-//       success: true,
-//       text,
-//       imageUrl: `/public/posts/${fileName}`
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ error: "Image generation failed" });
-//   }
-// });
+    console.log("🤖 Starting AI Face Animation (This takes 1-2 minutes)...");
 
-// /* =========================
-//    GENERATE POST (LOCAL)
-// ========================= */
-// app.get("/generate-post", async (_req, res) => {
-//     try {
-//       const quote =
-//         "Discipline is choosing between what you want now and what you want most.";
-  
-//       // ✅ AWAIT the image generation
-//       const imageBuffer = await createImageFromTemplate("1", quote);
-  
-//       const fileName = `post-${Date.now()}.png`;
-//       const filePath = path.join(process.cwd(), "public", "posts", fileName);
-  
-//       fs.writeFileSync(filePath, imageBuffer);
-  
-//       res.json({
-//         success: true,
-//         imageUrl: `/public/posts/${fileName}`
-//       });
-//     } catch (err) {
-//       console.error(err);
-//       res.status(500).json({ error: "Post generation failed" });
-//     }
-//   });
-  
-// /* =========================
-//    POST TO FACEBOOK PAGE
-// ========================= */
-// /* =========================
-//    POST TO FACEBOOK PAGE
-// ========================= */
-// app.get("/post-facebook", async (_req, res) => {
-//     try {
-//       const quote = getRandomQuote();
-//       const imageBuffer = await createImageFromTemplate("1", quote);
-  
-//       const fileName = `fb-${Date.now()}.png`;
-//       const postsDir = path.join(process.cwd(), "public", "posts");
-      
-//       // Ensure directory exists
-//       if (!fs.existsSync(postsDir)) {
-//           fs.mkdirSync(postsDir, { recursive: true });
-//       }
+    // 2. Trigger SadTalker for Lip-Sync
+    // --still: Keeps body steady for professional look
+    // --enhancer gfpgan: Makes the face look High-Definition (Realistic)
+    const sadTalkerCmd = `python3 SadTalker/inference.py --driven_audio "${audioPath}" --source_image "${imagePath}" --result_dir "./public/posts" --still --preprocess full --enhancer gfpgan`;
+    
+    execSync(sadTalkerCmd);
 
-//       const filePath = path.join(postsDir, fileName);
-//       fs.writeFileSync(filePath, imageBuffer);
-  
-//       const caption = `🚀 Auto post\n\n"${quote}"`;
-  
-//       // This calls your axios service
-//       const result = await postImageDirectlyToFacebook(filePath, caption);
-  
-//       res.json({
-//         success: true,
-//         facebookPostId: result.id, // Photo ID
-//         facebookPostLink: `https://www.facebook.com/${result.post_id}`
-//       });
-//     } catch (err: any) {
-//       // Improved error logging
-//       const errorData = err.response?.data || err.message;
-//       console.error("❌ Facebook API Error:", JSON.stringify(errorData, null, 2));
-//       res.status(500).json({ 
-//         error: "Facebook post failed", 
-//         details: errorData 
-//       });
-//     }
-// });
-  
-  
-// /* =========================
-//    MESSENGER WEBHOOK VERIFICATION
-// ========================= */
-// app.get("/webhook", (req, res) => {
-//     const VERIFY_TOKEN = "sandeep"; // Use the same string here and on Meta Dashboard
-  
-//     const mode = req.query["hub.mode"];
-//     const token = req.query["hub.verify_token"];
-//     const challenge = req.query["hub.challenge"];
-  
-//     if (mode && token) {
-//       if (mode === "subscribe" && token === VERIFY_TOKEN) {
-//         console.log("✅ WEBHOOK_VERIFIED");
-//         res.status(200).send(challenge);
-//       } else {
-//         res.sendStatus(403);
-//       }
-//     }
-//   });
-  
-//   // Post route to actually receive messages/events
-//   app.post("/webhook", (req, res) => {
-//     console.log("📩 Webhook received:", req.body);
-//     res.status(200).send("EVENT_RECEIVED");
-//   });
+    // 3. Find the generated file (SadTalker saves in a timestamped subfolder)
+    res.json({
+      success: true,
+      message: "Realistic Talking Influencer Generated!",
+      checkFolder: "/public/posts"
+    });
 
-// /* =========================
-//    CRON JOB (CLEANUP)
-// ========================= */
-// cron.schedule("0 * * * *", () => {
-//   console.log("🧹 Running image cleanup job");
-//   cleanupOldImages();
-// });
+  } catch (error: any) {
+    console.error("❌ Animation Failed:", error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
