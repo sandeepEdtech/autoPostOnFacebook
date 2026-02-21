@@ -11,7 +11,7 @@ import { createImageFromTemplate,getRandomQuote } from "./services/imageTemplate
 import { env } from "./config/env";
 import axios from "axios";
 import { createTalkingInfluencerReel } from "./services/video.service";
-
+import { createCanvas, loadImage } from 'canvas';
 const app = express();
 // const PORT = process.env.PORT || 8080;
 // Add this exact line in your app.ts
@@ -28,39 +28,93 @@ const delay = (ms: number): Promise<void> => new Promise(res => setTimeout(res, 
  */
 const scheduleDailyPosts = () => {
   console.log("📅 Planning today's social media schedule...");
+  console.log("🔄 Scheduling: 4 Image Posts + 4 Reels = 8 total daily posts");
 
   // Viral windows based on 2026 engagement data
   const windows = [
-    { name: "Morning Peak", start: 8, end: 10 },    // 8-10 AM
-    { name: "Lunch Rush", start: 12, end: 14 },     // 12-2 PM
-    { name: "Afternoon Slump", start: 16, end: 18 }, // 4-6 PM
-    { name: "Prime Time", start: 19, end: 21 },     // 7-9 PM
-    { name: "Late Night", start: 22, end: 23 }      // 10-11 PM
+    { name: "Early Morning", start: 6, end: 8 },     // 6-8 AM - Early risers
+    { name: "Morning Peak", start: 8, end: 10 },     // 8-10 AM - Peak morning
+    { name: "Late Morning", start: 10, end: 12 },    // 10-12 AM - Late morning
+    { name: "Lunch Rush", start: 12, end: 14 },      // 12-2 PM - Lunch break
+    { name: "Afternoon", start: 14, end: 16 },       // 2-4 PM - Afternoon
+    { name: "Evening", start: 16, end: 18 },         // 4-6 PM - After work
+    { name: "Prime Time", start: 19, end: 21 },      // 7-9 PM - Prime time
+    { name: "Late Night", start: 22, end: 23 }       // 10-11 PM - Night owls
   ];
 
-  windows.forEach((window, index) => {
-    // 1. Generate random time within this specific window
-    const randomHour = Math.floor(Math.random() * (window.end - window.start + 1)) + window.start;
+  // Shuffle windows to randomize which type goes where
+  const shuffledWindows = [...windows].sort(() => Math.random() - 0.5);
+  
+  // Alternate between image posts and reels
+  let postCount = 0;
+  let reelCount = 0;
+
+  shuffledWindows.forEach((window, index) => {
+    // Determine if this slot should be image or reel
+    // We want 4 images and 4 reels total
+    const isReel = index % 2 === 0 ? reelCount < 4 : postCount < 3;
+    
+    let type = '';
+    if (isReel && reelCount < 4) {
+      type = 'REEL';
+      reelCount++;
+    } else if (postCount < 4) {
+      type = 'IMAGE';
+      postCount++;
+    } else if (reelCount < 4) {
+      type = 'REEL';
+      reelCount++;
+    } else {
+      type = 'IMAGE';
+      postCount++;
+    }
+
+    // Generate random time within this specific window
+    const randomHour = Math.floor(Math.random() * (window.end - window.start)) + window.start;
     const randomMinute = Math.floor(Math.random() * 60);
+    const randomSecond = Math.floor(Math.random() * 60); // Add seconds for more randomness
 
-    // 2. Schedule the Cron
-    cron.schedule(`${randomMinute} ${randomHour} * * *`, async () => {
-      // Human Behavior: Add a 0-10 minute "jitter" so it's not exactly on the minute
-      const jitterMs = Math.floor(Math.random() * 10 * 60 * 1000);
-      await delay(jitterMs);
-
+    // Schedule the Cron
+    cron.schedule(`${randomSecond} ${randomMinute} ${randomHour} * * *`, async () => {
       try {
-        console.log(`🚀 [${window.name}] Executing post at ${randomHour}:${randomMinute}`);
-        await postToInstagramAutomatically();
-        await postToFacebookAutomatically();
+        // Human Behavior: Add random delay between 0-15 minutes
+        const jitterMin = Math.floor(Math.random() * 15); // 0-15 minutes
+        const jitterSec = Math.floor(Math.random() * 60); // 0-60 seconds
+        const jitterMs = (jitterMin * 60 * 1000) + (jitterSec * 1000);
+        
+        console.log(`⏰ Scheduled ${type} for ${randomHour}:${randomMinute}:${randomSecond} with ${jitterMin}m ${jitterSec}s jitter`);
+        await delay(jitterMs);
+
+        console.log(`🚀 [${window.name}] Executing ${type} at ${new Date().toLocaleTimeString()}`);
+        
+        if (type === 'REEL') {
+          // Post reel
+          await generateAndPostReelFlow();
+        } else {
+          // Post image
+          await postToInstagramAutomatically();
+          await postToFacebookAutomatically();
+        }
+        
+        console.log(`✅ [${window.name}] ${type} posted successfully`);
       } catch (error) {
-        console.error(`❌ [${window.name}] Post failed:`, error);
+        console.error(`❌ [${window.name}] ${type} failed:`, error);
       }
     });
 
-    console.log(`📍 Post ${index + 1} (${window.name}) set for ${randomHour}:${randomMinute.toString().padStart(2, '0')}`);
+    // Add some variation in the display
+    const emoji = type === 'REEL' ? '🎬' : '📷';
+    console.log(`${emoji} ${type} ${index + 1} (${window.name}) set for ${randomHour.toString().padStart(2, '0')}:${randomMinute.toString().padStart(2, '0')}:${randomSecond.toString().padStart(2, '0')} (with random delay)`);
   });
+
+  console.log(`\n📊 Summary: ${postCount} Image Posts + ${reelCount} Reels scheduled for today`);
+  console.log("🤖 Posts will appear at random times with human-like delays\n");
 };
+
+// ==========================================
+// AUTO POST REEL FUNCTION
+// ==========================================
+
 
 /**
  * Midnight Cleanup: Deletes all generated images from the 'public/posts' folder.
@@ -102,12 +156,12 @@ scheduleDailyPosts();
 // Manual trigger endpoint
 app.get("/generate-and-post", async (_req, res) => {
   try {
-//const result = await postToFacebookAutomatically();
+const result1 = await postToFacebookAutomatically();
 const result=await postToInstagramAutomatically()
     res.json({
       success: true,
       message: "Post created and published successfully",
-      data: result,
+      data: result,result1,
     });
   } catch (error: any) {
     res.status(500).json({
@@ -369,96 +423,367 @@ app.listen(PORT, "0.0.0.0", () => {
 });
 
 
-app.get('/generate-hindi-motivation', async (req, res) => {
-  try {
-    const hindiQuote = "सफलता का कोई मंत्र नहीं है, यह सिर्फ कड़ी मेहनत का नतीजा है।";
-    const influencerImage = "influencer_1.png"; // Your red dress image
-    
-    const outputPath = path.join(process.cwd(), 'public/posts', `hindi-reel-${Date.now()}.mp4`);
+// --- CONFIGURATION ---
+const SERVER_URL = process.env.SERVER_URL || "http://localhost:3000";
 
-    console.log("🚀 Starting Hindi Talking Head Process...");
-    
-    // This calls the service we will write below
-    await createTalkingInfluencerReel(hindiQuote, influencerImage, outputPath);
+// --- HELPERS ---
 
-    res.json({ 
-      success: true, 
-      message: "Hindi Motivational Reel Generated!",
-      file: path.basename(outputPath)
-    });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+// async function getRandomQuote(): Promise<string> {
+//   const quotes = [
+//     "The only way to do great work is to love what you do.",
+//     "Your body is the only place you have to live. Treat it like a temple.",
+//     "Difficult roads often lead to beautiful destinations.",
+//     "Do something today that your future self will thank you for."
+//   ];
+//   return quotes[Math.floor(Math.random() * quotes.length)];
+// }
+
+// function wrapText(ctx: any, text: string, maxWidth: number): string[] {
+//   const words = text.split(' ');
+//   const lines: string[] = [];
+//   let currentLine = words[0];
+//   for (let i = 1; i < words.length; i++) {
+//     const width = ctx.measureText(currentLine + ' ' + words[i]).width;
+//     if (width < maxWidth) { currentLine += ' ' + words[i]; } 
+//     else { lines.push(currentLine); currentLine = words[i]; }
+//   }
+//   lines.push(currentLine);
+//   return lines;
+// }
+
+
+
+function roundRect(ctx: any, x: number, y: number, width: number, height: number, radius: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
+
+/**
+ * HELPER: Wraps text to fit the box
+ */
+function wrapText(ctx: any, text: string, maxWidth: number): string[] {
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let currentLine = words[0];
+  for (let i = 1; i < words.length; i++) {
+    const width = ctx.measureText(currentLine + ' ' + words[i]).width;
+    if (width < maxWidth) { currentLine += ' ' + words[i]; } 
+    else { lines.push(currentLine); currentLine = words[i]; }
   }
-});
-// Local Test Route: Generate video without posting
-app.get("/test-video-gen", async (_req, res) => {
+  lines.push(currentLine);
+  return lines;
+}
+
+/**
+ * GENERATOR: Creates a high-end frame with Glassmorphism and Colorful Images
+ */
+/**
+ * GENERATES THE PERFECT 9:16 FRAME
+ */
+async function createReelFrame(quote: string): Promise<Buffer> {
+  const width = 1080;
+  const height = 1920; // Exact 9:16 Ratio
+  const canvas = createCanvas(width, height);
+  const ctx = canvas.getContext("2d");
+
   try {
-    const videoFileName = `test-reel-${Date.now()}.mp4`;
+    const randomID = Math.floor(Math.random() * 1000);
+    const imageUrl = `https://picsum.photos/seed/${randomID}/1080/1920`;
+    const backgroundImage = await loadImage(imageUrl);
     
-    // Ensure the directories exist
-    const postsDir = path.resolve(process.cwd(), "public", "posts");
-    if (!fs.existsSync(postsDir)) fs.mkdirSync(postsDir, { recursive: true });
+    // CENTER CROP LOGIC: This ensures the image covers the WHOLE screen
+    const canvasRatio = width / height;
+    const imageRatio = backgroundImage.width / backgroundImage.height;
+    let drawWidth, drawHeight, drawX, drawY;
 
-    const outputPath = path.join(postsDir, videoFileName);
-    const imageFolder = path.resolve(process.cwd(), "public", "influencer_images");
-    const audioPath = path.resolve(process.cwd(), "public", "music", "trending_track.mp3");
-
-    // 1. Verify files exist before starting
-    if (!fs.existsSync(imageFolder) || fs.readdirSync(imageFolder).length === 0) {
-      throw new Error("Missing images in public/influencer_images");
+    if (imageRatio > canvasRatio) {
+        drawHeight = height;
+        drawWidth = backgroundImage.width * (height / backgroundImage.height);
+        drawX = (width - drawWidth) / 2;
+        drawY = 0;
+    } else {
+        drawWidth = width;
+        drawHeight = backgroundImage.height * (width / backgroundImage.width);
+        drawX = 0;
+        drawY = (height - drawHeight) / 2;
     }
-    if (!fs.existsSync(audioPath)) {
-      throw new Error("Missing audio file at public/music/trending_track.mp3");
+
+    ctx.drawImage(backgroundImage, drawX, drawY, drawWidth, drawHeight);
+
+    // Darken the background slightly for text pop
+    ctx.fillStyle = "rgba(0,0,0,0.3)";
+    ctx.fillRect(0, 0, width, height);
+  } catch (e) {
+    ctx.fillStyle = '#1a1a2e'; ctx.fillRect(0, 0, width, height);
+  }
+
+  // --- GLASS BOX AND TEXT ---
+  const margin = 80;
+  const maxWidth = width - (margin * 2) - 60;
+  let fontSize = 90;
+  ctx.font = `bold ${fontSize}px "Arial"`;
+  let lines = wrapText(ctx, quote.toUpperCase(), maxWidth);
+
+  const lineHeight = fontSize * 1.3;
+  const boxHeight = (lines.length * lineHeight) + 160;
+  const boxY = (height / 2) - (boxHeight / 2);
+
+  // Frosted Glass Box
+  ctx.save();
+  ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
+  ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
+  ctx.shadowBlur = 50;
+  roundRect(ctx, margin, boxY, width - (margin * 2), boxHeight, 40);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.4)";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.restore();
+
+  // Draw Text
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#FFFFFF';
+  lines.forEach((line, i) => {
+    ctx.fillText(line, width / 2, (boxY + 80) + (lineHeight / 2) + (i * lineHeight));
+  });
+
+  return canvas.toBuffer("image/png");
+}
+// --- ROUTES ---
+
+// 1. Manual Preview Route
+// app.get("/create-reel-manual", async (req, res) => {
+//   try {
+//     const result = await generateReelFile();
+//     res.send(`
+//       <div style="text-align:center; padding:50px; font-family:sans-serif;">
+//         <h1 style="color:#2ecc71;">Reel Created!</h1>
+//         <p>"${result.quote}"</p>
+//         <a href="${result.videoUrl}" target="_blank" style="background:#0095f6; color:white; padding:15px 25px; border-radius:10px; text-decoration:none; font-weight:bold;">🎥 WATCH REEL</a>
+//       </div>
+//     `);
+//   } catch (e: any) {
+//     res.status(500).send("Error: " + e.message);
+//   }
+// });
+/**
+ * Generates a random engaging caption for the Reel
+ */
+function createReelCaption(quote: string): string {
+  const hashtags = "#motivation #mindset #success #dailyquotes #reels #inspiration #growth";
+  const templates = [
+    `✨ Perspective is everything.\n\n"${quote}"\n\nFollow @autop.ost for your daily dose of growth. 🚀\n\n${hashtags}`,
+    `🔥 This hit different today.\n\n"${quote}"\n\nTag someone who needs to hear this. 🙌\n\n${hashtags}`,
+    `💎 Level up your thinking.\n\n"${quote}"\n\nDouble tap if you agree! ❤️\n\n${hashtags}`
+  ];
+  return templates[Math.floor(Math.random() * templates.length)];
+}
+// 2. Auto Post Route
+app.get("/generate-and-post-reel", async (req, res) => {
+  try {
+    // 1. Call the function and wait for the result
+    const result = await generateAndPostReelFlow();
+
+    // 2. Send the result back as JSON
+    if (result.success) {
+      res.status(200).json(result);
+    } else {
+      res.status(500).json(result);
+    }
+  } catch (error: any) {
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+import { spawn } from 'child_process';
+
+
+interface ReelResult {
+  videoUrl: string;
+  quote: string;
+}
+
+async function generateReelFile(reelNumber: number, retryCount = 0): Promise<ReelResult> {
+  const timestamp = Date.now();
+  const rootDir = process.cwd();
+  const tempDir = path.resolve(rootDir, "temp");
+  const reelsDir = path.resolve(rootDir, "public", "reels");
+  const musicPath = path.join(tempDir, "background_music.mp3");
+
+  // 1. DYNAMIC RANDOM DURATION (20 to 50 seconds)
+  const durationSeconds = Math.floor(Math.random() * (50 - 20 + 1)) + 20;
+  const fps = 25; 
+  const totalFrames = Math.floor(durationSeconds * fps); // Ensure integer for FFmpeg
+
+  console.log(`\n🎬 [Reel ${reelNumber}/4] Creating ${durationSeconds}s Reel (Attempt ${retryCount + 1})...`);
+
+  // Ensure directories exist
+  if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+  if (!fs.existsSync(reelsDir)) fs.mkdirSync(reelsDir, { recursive: true });
+
+  const quote = await getRandomQuote();
+  const imagePath = path.join(tempDir, `frame-${timestamp}.png`);
+  const videoFileName = `reel-${timestamp}.mp4`;
+  const videoOutputPath = path.join(reelsDir, videoFileName);
+
+  // 2. RENDER THE FRAME
+  const imageBuffer = await createReelFrame(quote);
+  fs.writeFileSync(imagePath, imageBuffer);
+
+  return new Promise((resolve, reject) => {
+    // 3. FFMPEG SPAWN (Optimized for Stability)
+    // -setsar=1 and scale/crop force FULL SCREEN on mobile
+    const ffmpeg = spawn('ffmpeg', [
+      '-y',
+      '-loop', '1',
+      '-i', imagePath,
+      '-i', musicPath,
+      '-vf', "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1",      '-c:v', 'libx264',
+      '-preset', 'veryfast', 
+      '-crf', '18',
+      '-pix_fmt', 'yuv420p',
+      '-c:a', 'aac',
+      '-b:a', '192k',
+      '-af', `afade=t=out:st=${durationSeconds - 2}:d=2`,
+      '-t', `${durationSeconds}`, 
+      videoOutputPath
+    ]);
+
+    ffmpeg.stderr.on('data', (data) => {
+      const line = data.toString();
+      if (line.includes('time=')) {
+        const timeMatch = line.match(/time=(\d{2}:\d{2}:\d{2}.\d{2})/);
+        if (timeMatch) {
+          process.stdout.write(`⏳ Encoding: ${timeMatch[1]} / 00:00:${durationSeconds}\r`);
+        }
+      }
+    });
+
+    ffmpeg.on('close', async (code) => {
+      // Clean up the temporary frame immediately
+      if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
+
+      if (code === 0) {
+        console.log(`\n✅ Reel ${reelNumber} Complete! (${durationSeconds}s)`);
+        resolve({ 
+          videoUrl: `${process.env.SERVER_URL}/public/reels/${videoFileName}`, 
+          quote: quote 
+        });
+      } else {
+        console.error(`\n❌ FFmpeg failed with code ${code}`);
+        
+        // Retry logic for Error 254 or other glitches
+        if (retryCount < 2) {
+          console.log("🔄 Retrying generation...");
+          resolve(await generateReelFile(reelNumber, retryCount + 1));
+        } else {
+          reject(new Error(`FFmpeg failed repeatedly with code ${code}`));
+        }
+      }
+    });
+  });
+}
+
+
+
+/**
+ * Standalone function to generate and post a Reel to Instagram
+ */
+async function generateAndPostReelFlow(reelNumber: number = 1) {
+  try {
+    console.log(`\n🚀 Starting Global Reel Post Flow for Reel #${reelNumber}...`);
+
+    // 1. Generate the video file using our robust function
+    const reel = await generateReelFile(reelNumber);
+    
+    // Safety check for public URL
+    if (reel.videoUrl.includes('localhost') || reel.videoUrl.includes('127.0.0.1')) {
+      console.warn("⚠️ Warning: Instagram cannot reach 'localhost'. Ensure SERVER_URL is a public Ngrok/Render link.");
     }
 
-    console.log("🚀 Starting local video generation test...");
+    const caption = createReelCaption(reel.quote);
+
+    // STEP 1: Create Media Container
+    console.log("📤 Step 1/3: Uploading video to Instagram servers...");
+    const container = await axios.post(
+      `https://graph.facebook.com/v18.0/${process.env.IG_BUSINESS_ID}/media`, 
+      {
+        media_type: 'REELS',
+        video_url: reel.videoUrl,
+        caption: caption,
+        access_token: process.env.FB_PAGE_TOKEN
+      }
+    );
+
+    const creationId = container.data.id;
+    console.log(`📦 Container Created (ID: ${creationId}).`);
+
+    // STEP 2: Polling for processing status
+    console.log("⏳ Step 2/3: Waiting for Instagram to process HD video...");
     
-    // 2. Generate the video
-   ///await createRhythmicDanceVideo(imageFolder, audioPath, outputPath);
+    let finished = false;
+    const maxChecks = 30; // 5 minutes max for longer reels (20-50s)
+    
+    for (let i = 0; i < maxChecks; i++) {
+      const percent = Math.round(((i + 1) / maxChecks) * 100);
+      process.stdout.write(`   IG Processing: [${"=".repeat(Math.floor(i/1.5))}${" ".repeat(Math.floor((maxChecks - i)/1.5))}] ${percent}%\r`);
+      
+      await new Promise(r => setTimeout(r, 10000)); // 10 second interval
 
-    console.log(`✅ Success! Video saved to: ${outputPath}`);
+      const check = await axios.get(`https://graph.facebook.com/v18.0/${creationId}`, {
+        params: { 
+          fields: 'status_code', 
+          access_token: process.env.FB_PAGE_TOKEN 
+        }
+      });
 
-    res.json({
-      success: true,
-      message: "Test video generated locally",
-      filePath: outputPath,
-      viewUrl: `http://localhost:${process.env.PORT || 5000}/public/posts/${videoFileName}`
-    });
-  } catch (error: any) {
-    console.error("❌ Test Failed:", error.message);
-    res.status(500).json({ success: false, error: error.message });
+      const statusCode = check.data.status_code;
+
+      if (statusCode === 'FINISHED') {
+        finished = true;
+        console.log("\n✅ Instagram Processing: 100% Complete!");
+        break;
+      }
+      
+      if (statusCode === 'ERROR') {
+        throw new Error(`Instagram server failed to process the video.`);
+      }
+    }
+
+    if (!finished) {
+      throw new Error("Instagram processing timeout (5-minute limit reached).");
+    }
+
+    // STEP 3: Final Publish
+    console.log("🚀 Step 3/3: Publishing to Feed...");
+    const publish = await axios.post(
+      `https://graph.facebook.com/v18.0/${process.env.IG_BUSINESS_ID}/media_publish`, 
+      {
+        creation_id: creationId,
+        access_token: process.env.FB_PAGE_TOKEN
+      }
+    );
+
+    console.log(`✨ SUCCESS: Reel #${reelNumber} is now LIVE!`);
+    console.log(`🔗 Post ID: ${publish.data.id}`);
+
+    return { success: true, id: publish.data.id };
+
+  } catch (e: any) {
+    const errorMsg = e.response?.data?.error?.message || e.message;
+    console.error(`\n❌ FAILED TO AUTO-POST REEL #${reelNumber}:`, errorMsg);
+    return { success: false, error: errorMsg };
   }
-});
-
-app.get("/generate-motivational-reel", async (req, res) => {
-  try {
-    const timestamp = Date.now();
-    const rootDir = process.cwd();
-    const imagePath = path.join(rootDir, 'public', 'influencer_images', 'influencer_1.png');
-    const audioPath = path.join(rootDir, 'public', 'music', `audio_${timestamp}.mp3`);
-    
-    // 1. Generate Hindi Voice
-    const hindiQuote = "सफलता का कोई मंत्र नहीं है, यह सिर्फ कड़ी मेहनत का नतीजा है।";
-    execSync(`python3 -c "from gtts import gTTS; gTTS('${hindiQuote}', lang='hi').save('${audioPath}')"`);
-
-    console.log("🤖 Starting AI Face Animation (This takes 1-2 minutes)...");
-
-    // 2. Trigger SadTalker for Lip-Sync
-    // --still: Keeps body steady for professional look
-    // --enhancer gfpgan: Makes the face look High-Definition (Realistic)
-    const sadTalkerCmd = `python3 SadTalker/inference.py --driven_audio "${audioPath}" --source_image "${imagePath}" --result_dir "./public/posts" --still --preprocess full --enhancer gfpgan`;
-    
-    execSync(sadTalkerCmd);
-
-    // 3. Find the generated file (SadTalker saves in a timestamped subfolder)
-    res.json({
-      success: true,
-      message: "Realistic Talking Influencer Generated!",
-      checkFolder: "/public/posts"
-    });
-
-  } catch (error: any) {
-    console.error("❌ Animation Failed:", error.message);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
+}
