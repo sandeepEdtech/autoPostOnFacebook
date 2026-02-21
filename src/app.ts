@@ -557,6 +557,27 @@ async function createReelFrame(quote: string): Promise<Buffer> {
     ctx.fillText(line, width / 2, (boxY + 80) + (lineHeight / 2) + (i * lineHeight));
   });
 
+  // ==========================================
+  // ADDED: WATERMARK & BRANDING SECTION FOR REELS
+  // ==========================================
+  const watermarkY = height - 100;
+  
+  // 1. Draw a subtle darkened strip or glow behind the watermark for visibility
+  ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+  roundRect(ctx, (width / 2) - 100, watermarkY - 25, 200, 50, 25);
+  ctx.fill();
+
+  // 2. Add "@autop.ost" Username
+  ctx.fillStyle = "#ffffff";
+  ctx.font = `bold 28px "Montserrat", "Arial"`;
+  ctx.textAlign = "center";
+  ctx.fillText("@autop.ost", width / 2, watermarkY);
+
+  // 3. Add "Daily Motivation" sub-text below the glass box
+  ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+  ctx.font = `italic 22px "Montserrat", "Arial"`;
+  ctx.fillText("Daily Motivation", width / 2, boxY + boxHeight + 50);
+
   return canvas.toBuffer("image/png");
 }
 // --- ROUTES ---
